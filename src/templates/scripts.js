@@ -121,6 +121,13 @@ files.forEach(fileObj => {
              console.error(\`   Devvit CSP blocks blob: URL fetching. Use blob.arrayBuffer() directly instead.\`);
              issues++;
         }
+
+        // Check for eval() or new Function()
+        if (content.includes('eval(') || content.includes('new Function(')) {
+             console.error(\`❌ CRITICAL: eval() or new Function() detected in \${f}\`);
+             console.error(\`   This violates CSP and will cause runtime errors.\`);
+             issues++;
+        }
     }
 });
 

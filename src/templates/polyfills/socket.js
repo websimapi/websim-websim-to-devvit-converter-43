@@ -35,16 +35,14 @@ export const websimSocketPolyfill = `
                 // Dynamically import Devvit Web Client to avoid build issues if mixed with older code
                 const { connectRealtime } = await import('@devvit/web/client');
                 
-                this.socket = connectRealtime();
-                this.channel = this.socket.channel('global-room');
-                
-                this.channel.onMessage((msg) => this._handleMessage(msg));
-                this.channel.subscribe();
-
-                // Announce Self
-                await this._announceJoin();
-                
-                console.log("[WebSim] Realtime Connected. ClientID:", this.clientId);
+                this.channel = await connectRealtime({
+                    channel: 'global-room',
+                    onMessage: (msg) => this._handleMessage(msg),
+                    onConnect: () => {
+                        console.log("[WebSim] Realtime Connected. ClientID:", this.clientId);
+                        this._announceJoin();
+                    }
+                });
 
             } catch (e) {
                 console.warn("[WebSim] Realtime init failed:", e);

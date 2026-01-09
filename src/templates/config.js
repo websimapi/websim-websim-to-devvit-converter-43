@@ -82,27 +82,24 @@ export default defineConfig({
   plugins: [
     ${hasReact ? `react({
       jsxRuntime: 'automatic', 
-      // Force production runtime even if code tries to import dev
       jsxImportSource: 'react',
       include: "**/*.{jsx,tsx,js,ts}",
       babel: {
         babelrc: false,
         configFile: false,
-        plugins: []
+        plugins: [],
+        compact: true // ← ADD THIS: Ensures no eval in output
       }
     }),` : ''}
   ],
   resolve: {
     alias: {
-      // CRITICAL: Remotion and some React libs might try to import jsx-dev-runtime in 'dev' mode.
-      // We alias to a local proxy that implements jsxDEV using the production jsx runtime.
       'react/jsx-dev-runtime': '/jsx-dev-proxy.js',
       'react/jsx-runtime': 'react/jsx-runtime',
       'remotion': 'remotion',
       'websim': '/websim_package.js'
     },
     extensions: ['.mjs', '.js', '.mts', '.ts', '.jsx', '.tsx', '.json'],
-    // Ensure we prioritize browser builds
     mainFields: ['browser', 'module', 'main'],
   },
   assetsInclude: ['**/*.mp3', '**/*.wav', '**/*.ogg', '**/*.glb', '**/*.gltf', '**/*.png', '**/*.jpg', '**/*.jpeg', '**/*.gif'],
@@ -110,14 +107,23 @@ export default defineConfig({
     loader: 'jsx',
     include: /.*\.(js|jsx|ts|tsx)$/,
     exclude: [],
+    legalComments: 'none', // ← ADD THIS: Remove comments that might trigger eval
   },
   build: {
     outDir: '../../dist/client',
     emptyOutDir: true,
     target: 'es2020',
-    minify: 'esbuild',
-    sourcemap: false, // Fix: Disable source maps to ensure CSP compliance (no eval)
-    // Increase the chunk size warning limit to 1000 KB to reduce noise
+    minify: 'terser', // ← CHANGE FROM esbuild to terser for better CSP compliance
+    terserOptions: {  // ← ADD THIS BLOCK
+      compress: {
+        drop_console: false,
+        pure_funcs: [] // Don't remove any functions
+      },
+      format: {
+        comments: false // Remove all comments
+      }
+    },
+    sourcemap: false,
     chunkSizeWarningLimit: 1000,
     rollupOptions: {
       ${Object.keys(inputs).length > 0 ? `input: ${JSON.stringify(inputs)},` : ''}
@@ -125,34 +131,27 @@ export default defineConfig({
         entryFileNames: "[name].js",
         chunkFileNames: "[name].js",
         assetFileNames: "[name][extname]",
-        // Manual chunking to split large dependencies
+        format: 'es', // ← ADD THIS: Force ES modules (no eval)
         manualChunks(id) {
-          // Split Three.js into its own chunk if present
-          if (id.includes('node_modules/three')) {
-            return 'three';
-          }
-          // Split Remotion into its own chunk if present
-          if (id.includes('node_modules/remotion') || id.includes('node_modules/@remotion')) {
-            return 'remotion';
-          }
-          // Split React into its own chunk if present
-          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom')) {
-            return 'react-vendor';
-          }
+          if (id.includes('node_modules/three')) return 'three';
+          if (id.includes('node_modules/remotion') || id.includes('node_modules/@remotion')) return 'remotion';
+          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom')) return 'react-vendor';
         }
       },
       external: [], 
     },
   },
   define: {
-    // Hardcode production environment to prevent libs from taking dev paths
     "process.env.NODE_ENV": JSON.stringify("production"),
     "process.platform": JSON.stringify("browser"),
-    // Remotion specific flags if needed
     "process.env.REMOTION_ENV": JSON.stringify("production"),
   },
   optimizeDeps: {
-    include: [${hasReact ? "'react', 'react-dom', 'react/jsx-runtime'" : ""}, ${hasRemotion ? "'remotion', '@remotion/player'" : ""}]
+    include: [${hasReact ? "'react', 'react-dom', 'react/jsx-runtime'" : ""}, ${hasRemotion ? "'remotion', '@remotion/player'" : ""}],
+    esbuildOptions: {
+      target: 'es2020',
+      legalComments: 'none' // ← ADD THIS
+    }
   }
 });
 `;
