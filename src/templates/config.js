@@ -97,7 +97,8 @@ export default defineConfig({
       'react/jsx-dev-runtime': '/jsx-dev-proxy.js',
       'react/jsx-runtime': 'react/jsx-runtime',
       'remotion': 'remotion',
-      'websim': '/websim_package.js'
+      'websim': '/websim_package.js',
+      '@protobufjs/inquire': '/protobuf-inquire-stub.js'
     },
     extensions: ['.mjs', '.js', '.mts', '.ts', '.jsx', '.tsx', '.json'],
     mainFields: ['browser', 'module', 'main'],

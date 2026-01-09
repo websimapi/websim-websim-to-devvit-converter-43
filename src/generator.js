@@ -21,7 +21,8 @@ import {
     validateScript,
     setupScript,
     generateReadme,
-    generateLauncherHtml
+    generateLauncherHtml,
+    protobufInquireStub
 } from './templates.js';
 
 export async function generateDevvitZip(projectMeta, assets, includeReadme = true, launchMode = 'inline') {
@@ -315,6 +316,7 @@ export default {
     clientFolder.file("websim_polyfills.js", combinedPolyfills);
     clientFolder.file("websim_package.js", websimPackageJs);
     clientFolder.file("jsx-dev-proxy.js", jsxDevProxy);
+    clientFolder.file("protobuf-inquire-stub.js", protobufInquireStub);
 
     if (hasRemotion) {
         clientFolder.file("remotion_bridge.js", `

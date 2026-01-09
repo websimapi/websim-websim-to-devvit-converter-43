@@ -23,6 +23,13 @@ export const upload = w.upload;
 export const collection = w.collection;
 `;
 
+export const protobufInquireStub = `
+// Stub for @protobufjs/inquire to avoid eval() usage in CSP-strict environments
+export default function inquire(moduleName) {
+  return null;
+}
+`;
+
 export const avatarInjector = `
 // [WebSim] Avatar Injector - Hot-swaps placeholder URLs for real Snoovatars
 (function() {
