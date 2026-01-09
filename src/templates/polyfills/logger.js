@@ -33,6 +33,8 @@ export const simpleLoggerJs = `
   console.error = function(...args) { _error.apply(console, args); post('error', args); };
 
   window.addEventListener('error', function(e) {
+    // Suppress noisy source map errors from Devvit/Browser internals
+    if (e.message && (e.message.includes('URL constructor') || e.message.includes('source map'))) return;
     post('error', ['[Uncaught]', e.message]);
   });
 

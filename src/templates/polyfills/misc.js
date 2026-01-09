@@ -28,8 +28,6 @@ export const protobufInquireStub = `
 export default function inquire(moduleName) {
   return null;
 }
-// Support CommonJS default import
-inquire.default = inquire;
 `;
 
 export const avatarInjector = `

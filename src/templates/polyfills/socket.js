@@ -257,9 +257,11 @@ export const websimSocketPolyfill = `
 
     // Auto-instantiate if needed (often games use new WebsimSocket())
     // But some games access window.party directly.
-    // We'll create a lazy instance.
+    // We'll create a lazy instance and start it.
     if (!window.party) {
          window.party = new WebsimSocket();
+         // Start connection automatically
+         window.party.initialize();
     }
 
 

@@ -47,7 +47,6 @@ export async function generateDevvitZip(projectMeta, assets, includeReadme = tru
     // 1. Initial Sort & Clean
     for (const [path, content] of Object.entries(assets)) {
         if (path.includes('..')) continue;
-        if (path.includes('node_modules/') || path.includes('.git/')) continue;
 
         // Code Files
         if (/\.(html|js|mjs|ts|jsx|tsx|css|json|txt|md)$/i.test(path)) {

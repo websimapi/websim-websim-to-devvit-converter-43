@@ -113,9 +113,9 @@ export default defineConfig({
   assetsInclude: ['**/*.mp3', '**/*.wav', '**/*.ogg', '**/*.glb', '**/*.gltf', '**/*.png', '**/*.jpg', '**/*.jpeg', '**/*.gif'],
   esbuild: {
     loader: 'jsx',
-    include: /.*\.(js|jsx|ts|tsx)$/,
+    include: /\.(js|jsx|ts|tsx)$/, // regex fix
     exclude: [],
-    legalComments: 'none', // ← ADD THIS: Remove comments that might trigger eval
+    legalComments: 'none', 
   },
   build: {
     outDir: '../../dist/client',
@@ -161,7 +161,6 @@ export default defineConfig({
     "process.env.REMOTION_ENV": JSON.stringify("production"),
     "__REACT_DEVTOOLS_GLOBAL_HOOK__": JSON.stringify({ isDisabled: true }),
     "process.env.REMOTION_DISABLE_STUDIO": JSON.stringify("true"),
-    "global": "globalThis",
   },
   optimizeDeps: {
     include: [${hasReact ? "'react', 'react-dom', 'react/jsx-runtime'" : ""}, ${hasRemotion ? "'remotion', '@remotion/player'" : ""}],
