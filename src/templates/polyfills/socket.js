@@ -20,7 +20,8 @@ export const websimSocketPolyfill = `
                 message: null
             };
             this.socket = null;
-            this.channel = null;
+            this.subscription = null; // connectRealtime returns a disposable subscription, not a bidirectional channel
+            this.isConnected = false;
 
             // Singleton logic
             if (window.websimSocketInstance) {
@@ -32,17 +33,26 @@ export const websimSocketPolyfill = `
         async initialize() {
             console.log("[WebSim] Initializing Realtime Socket...");
             try {
-                // Dynamically import Devvit Web Client to avoid build issues if mixed with older code
+                // Dynamically import Devvit Web Client
                 const { connectRealtime } = await import('@devvit/web/client');
                 
-                this.channel = await connectRealtime({
+                // Devvit Web Client (WebView) connectRealtime only receives messages.
+                // It does NOT return a channel with .send().
+                this.subscription = await connectRealtime({
                     channel: 'global_room',
                     onMessage: (msg) => this._handleMessage(msg),
                     onConnect: () => {
                         console.log("[WebSim] Realtime Connected. ClientID:", this.clientId);
+                        this.isConnected = true;
                         this._announceJoin();
+                    },
+                    onDisconnect: () => {
+                        this.isConnected = false;
                     }
                 });
+                
+                // If onConnect isn't triggered immediately or we need to assume connectivity for optimistic UI
+                this.isConnected = true;
 
             } catch (e) {
                 console.warn("[WebSim] Realtime init failed:", e);
@@ -57,19 +67,32 @@ export const websimSocketPolyfill = `
 
         // --- Public API ---
 
+        async _sendToServer(payload) {
+            // In Devvit Web, client cannot send directly. Must fetch to server, which broadcasts via realtime plugin.
+            try {
+                await fetch('/api/realtime/message', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+            } catch(e) {
+                console.warn("RT Send Error:", e);
+            }
+        }
+
         updatePresence(data) {
             // 1. Update Local
             this.presence[this.clientId] = { ...this.presence[this.clientId], ...data };
             this._notifyPresence();
 
-            // 2. Broadcast
-            if (this.channel) {
-                this.channel.send({
+            // 2. Broadcast via Server
+            if (this.isConnected) {
+                this._sendToServer({
                     type: '_ws_presence',
                     clientId: this.clientId,
                     user: window._currentUser,
                     payload: data
-                }).catch(e => console.warn("Send failed", e));
+                });
             }
         }
 
@@ -78,9 +101,9 @@ export const websimSocketPolyfill = `
             this.roomState = { ...this.roomState, ...data };
             this._notifyRoomState();
 
-            // 2. Broadcast
-            if (this.channel) {
-                this.channel.send({
+            // 2. Broadcast via Server
+            if (this.isConnected) {
+                this._sendToServer({
                     type: '_ws_roomstate',
                     payload: data
                 });
@@ -88,8 +111,8 @@ export const websimSocketPolyfill = `
         }
 
         requestPresenceUpdate(targetClientId, update) {
-            if (this.channel) {
-                this.channel.send({
+            if (this.isConnected) {
+                this._sendToServer({
                     type: '_ws_req_update',
                     targetId: targetClientId,
                     fromId: this.clientId,
@@ -100,8 +123,8 @@ export const websimSocketPolyfill = `
 
         send(event) {
             // Ephemeral Events
-            if (this.channel) {
-                this.channel.send({
+            if (this.isConnected) {
+                this._sendToServer({
                     type: '_ws_event',
                     clientId: this.clientId,
                     username: window._currentUser?.username || 'Guest',

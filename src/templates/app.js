@@ -8,7 +8,8 @@ import {
     context, 
     getServerPort, 
     redis, 
-    reddit 
+    reddit,
+    realtime
 } from '@devvit/web/server';
 
 // Enable Realtime & Reddit API
@@ -130,6 +131,19 @@ router.post('/api/delete', async (req, res) => {
         res.json({ success: true, collection, key });
     } catch(e) {
         console.error('DB Delete Error:', e);
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// --- Realtime Relay (Client -> Server -> Clients) ---
+router.post('/api/realtime/message', async (req, res) => {
+    try {
+        const msg = req.body;
+        // Broadcast to 'global_room' which clients subscribe to via connectRealtime
+        await realtime.send('global_room', msg);
+        res.json({ success: true });
+    } catch(e) {
+        console.error('Realtime Relay Error:', e);
         res.status(500).json({ error: e.message });
     }
 });
