@@ -33,7 +33,7 @@ export const websimSocketPolyfill = `
         async initialize() {
             console.log("[WebSim] Initializing Realtime Socket...");
             try {
-                console.log("[WebSim] Connecting to realtime channel...");
+                console.log("[WebSim] Connecting to realtime channel 'global_room'...");
                 const connectRealtime = window.connectRealtime;
 
                 if (!connectRealtime) throw new Error("connectRealtime not available - verify polyfill header");
@@ -42,13 +42,17 @@ export const websimSocketPolyfill = `
                 // It does NOT return a channel with .send().
                 this.subscription = await connectRealtime({
                     channel: 'global_room',
-                    onMessage: (msg) => this._handleMessage(msg),
+                    onMessage: (msg) => {
+                        // console.log("[WebSim] Raw Socket Msg:", msg); 
+                        this._handleMessage(msg);
+                    },
                     onConnect: () => {
                         console.log("[WebSim] Realtime Connected. ClientID:", this.clientId);
                         this.isConnected = true;
                         this._announceJoin();
                     },
                     onDisconnect: () => {
+                        console.log("[WebSim] Realtime Disconnected");
                         this.isConnected = false;
                     }
                 });
@@ -72,13 +76,15 @@ export const websimSocketPolyfill = `
         async _sendToServer(payload) {
             // In Devvit Web, client cannot send directly. Must fetch to server, which broadcasts via realtime plugin.
             try {
-                await fetch('/api/realtime/message', {
+                // console.log("[WebSim] Sending to Server:", payload.type);
+                const res = await fetch('/api/realtime/message', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
+                if (!res.ok) console.error("[WebSim] RT Send Failed:", res.status);
             } catch(e) {
-                console.warn("RT Send Error:", e);
+                console.error("[WebSim] RT Send Error:", e);
             }
         }
 
@@ -162,16 +168,19 @@ export const websimSocketPolyfill = `
         // --- Internal Handlers ---
 
         _handleMessage(msg) {
-            // Devvit Realtime wraps message? The prompt implies 'msg' is the payload or 'data'
-            // Assuming msg is the object we sent.
+            // Devvit Realtime usually sends the JSON object directly in recent versions,
+            // but sometimes it's wrapped in an event object { message: ... } or { data: ... }
             
-            // Check message structure (Devvit sometimes wraps in { type, data } or just passes payload)
-            // We'll handle both.
-            const payload = msg.payload || msg; // Fallback
-            const type = msg.type || payload.type;
+            let data = msg;
+            if (msg.message) data = msg.message;
+            else if (msg.data && !msg.type) data = msg.data; // Careful not to unwrap our own { type, data } payload prematurely
+
+            console.log("[WebSim] RT Recv:", JSON.stringify(data).substring(0, 100));
+
+            const type = data.type;
 
             if (type === '_ws_presence') {
-                const { clientId, payload: data, user } = msg;
+                const { clientId, payload: presenceData, user } = data;
                 
                 // Update Peers List
                 if (user && !this.peers[clientId]) {
@@ -187,12 +196,12 @@ export const websimSocketPolyfill = `
                 this._notifyPresence();
             }
             else if (type === '_ws_roomstate') {
-                this.roomState = { ...this.roomState, ...msg.payload };
+                this.roomState = { ...this.roomState, ...data.payload };
                 this._notifyRoomState();
             }
             else if (type === '_ws_req_update') {
-                if (msg.targetId === this.clientId) {
-                    this.listeners.updateRequest.forEach(cb => cb(msg.payload, msg.fromId));
+                if (data.targetId === this.clientId) {
+                    this.listeners.updateRequest.forEach(cb => cb(data.payload, data.fromId));
                 }
             }
             else if (type === '_ws_event') {
@@ -200,9 +209,9 @@ export const websimSocketPolyfill = `
                     // Reconstruct WebSim event shape
                     const evt = {
                         data: {
-                            ...msg.data,
-                            clientId: msg.clientId,
-                            username: msg.username
+                            ...data.data,
+                            clientId: data.clientId,
+                            username: data.username
                         }
                     };
                     this.listeners.message(evt);

@@ -34,8 +34,12 @@ export const simpleLoggerJs = `
 
   window.addEventListener('error', function(e) {
     // Suppress noisy source map errors from Devvit/Browser internals
-    if (e.message && (e.message.includes('URL constructor') || e.message.includes('source map'))) return;
-    post('error', ['[Uncaught]', e.message]);
+    if (e.message && (e.message.includes('URL constructor') || e.message.includes('source map'))) {
+        // Log locally but don't spam postMessage
+        console.warn("[Internal/Ignored]", e.message);
+        return;
+    }
+    post('error', ['[Uncaught]', e.message, 'at', e.filename, ':', e.lineno]);
   });
 
   document.addEventListener('securitypolicyviolation', (e) => {

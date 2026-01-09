@@ -138,13 +138,15 @@ router.post('/api/delete', async (req, res) => {
 router.post('/api/realtime/message', async (req, res) => {
     try {
         const msg = req.body;
+        console.log('[Server] Relaying Realtime Message:', JSON.stringify(msg).substring(0, 200));
+        
         // Broadcast to 'global_room' which clients subscribe to via connectRealtime
         // Note: We use context.realtime (safely accessed for TS)
         // @ts-ignore
         await context.realtime.send('global_room', msg);
         res.json({ success: true });
     } catch(e) {
-        console.error('Realtime Relay Error:', e);
+        console.error('[Server] Realtime Relay Error:', e);
         res.status(500).json({ error: e.message });
     }
 });
