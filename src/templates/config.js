@@ -105,7 +105,8 @@ export default defineConfig({
       'remotion': 'remotion',
       'websim': path.resolve(__dirname, './websim_package.js'),
       '@protobufjs/inquire': path.resolve(__dirname, './protobuf-inquire-stub.js'),
-      'protobufjs/inquire': path.resolve(__dirname, './protobuf-inquire-stub.js')
+      'protobufjs/inquire': path.resolve(__dirname, './protobuf-inquire-stub.js'),
+      'protobufjs': 'protobufjs/minimal'
     },
     extensions: ['.mjs', '.js', '.mts', '.ts', '.jsx', '.tsx', '.json'],
     mainFields: ['browser', 'module', 'main'],
@@ -161,6 +162,7 @@ export default defineConfig({
     "process.env.REMOTION_ENV": JSON.stringify("production"),
     "__REACT_DEVTOOLS_GLOBAL_HOOK__": JSON.stringify({ isDisabled: true }),
     "process.env.REMOTION_DISABLE_STUDIO": JSON.stringify("true"),
+    "global": "globalThis",
   },
   optimizeDeps: {
     include: [${hasReact ? "'react', 'react-dom', 'react/jsx-runtime'" : ""}, ${hasRemotion ? "'remotion', '@remotion/player'" : ""}],
