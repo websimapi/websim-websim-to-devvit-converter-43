@@ -104,7 +104,8 @@ export default defineConfig({
       'react/jsx-runtime': 'react/jsx-runtime',
       'remotion': 'remotion',
       'websim': path.resolve(__dirname, './websim_package.js'),
-      '@protobufjs/inquire': path.resolve(__dirname, './protobuf-inquire-stub.js')
+      '@protobufjs/inquire': path.resolve(__dirname, './protobuf-inquire-stub.js'),
+      'protobufjs/inquire': path.resolve(__dirname, './protobuf-inquire-stub.js')
     },
     extensions: ['.mjs', '.js', '.mts', '.ts', '.jsx', '.tsx', '.json'],
     mainFields: ['browser', 'module', 'main'],

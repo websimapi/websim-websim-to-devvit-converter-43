@@ -312,7 +312,11 @@ export default {
         shimCode += '\n';
     }
 
-    const combinedPolyfills = [shimCode, simpleLoggerJs, webAudioPolyfill, websimSocketPolyfill, websimStubsJs, avatarInjector].join('\n\n');
+    // Prepare Polyfill Imports (Static) - hoisting import to top to avoid dynamic import issues
+    let polyfillImports = "import { connectRealtime } from '@devvit/web/client';\nwindow.connectRealtime = connectRealtime;\n";
+    
+    // Combine
+    const combinedPolyfills = [polyfillImports, shimCode, simpleLoggerJs, webAudioPolyfill, websimSocketPolyfill, websimStubsJs, avatarInjector].join('\n\n');
     clientFolder.file("websim_polyfills.js", combinedPolyfills);
     clientFolder.file("websim_package.js", websimPackageJs);
     clientFolder.file("jsx-dev-proxy.js", jsxDevProxy);
