@@ -8,7 +8,8 @@ import {
     context, 
     getServerPort, 
     redis, 
-    reddit
+    reddit,
+    realtime
 } from '@devvit/web/server';
 
 // Enable Realtime & Reddit API
@@ -141,9 +142,8 @@ router.post('/api/realtime/message', async (req, res) => {
         console.log('[Server] Relaying Realtime Message:', JSON.stringify(msg).substring(0, 200));
         
         // Broadcast to 'global_room' which clients subscribe to via connectRealtime
-        // Note: We use context.realtime (safely accessed for TS)
-        // @ts-ignore
-        await context.realtime.send('global_room', msg);
+        // Broadcast to 'global_room' which clients subscribe to via connectRealtime
+        await realtime.send('global_room', msg);
         res.json({ success: true });
     } catch(e) {
         console.error('[Server] Realtime Relay Error:', e);
