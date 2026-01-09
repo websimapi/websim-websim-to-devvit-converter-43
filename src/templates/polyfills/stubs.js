@@ -1,11 +1,12 @@
 export const websimStubsJs = `
 // [WebSim] API Stubs - Global Script
 (function() {
-    let _currentUser = null;
+    // Use window._currentUser as source of truth to sync with socket.js
+    const getCurrentUserGlobal = () => window._currentUser;
 
     // Listen for identity update from Socket Handshake or direct message
     const updateIdentity = (user) => {
-        _currentUser = user;
+        window._currentUser = user;
         if (window.WebsimSocket && window.WebsimSocket.updateIdentity) {
             window.WebsimSocket.updateIdentity(user);
         }
@@ -25,16 +26,18 @@ export const websimStubsJs = `
         window.websim = {
             getCurrentUser: async () => {
                 // Wait for handshake
-                if (!_currentUser) console.log("[WebSim] getCurrentUser waiting for identity...");
+                let u = getCurrentUserGlobal();
+                if (!u) console.log("[WebSim] getCurrentUser waiting for identity...");
                 let tries = 0;
-                while(!_currentUser && tries < 50) {
+                while(!u && tries < 50) {
                     await new Promise(r => setTimeout(r, 100));
+                    u = getCurrentUserGlobal();
                     tries++;
                 }
-                if (!_currentUser) console.warn("[WebSim] getCurrentUser timed out, returning Guest.");
-                else console.log("[WebSim] getCurrentUser resolved:", _currentUser.username);
+                if (!u) console.warn("[WebSim] getCurrentUser timed out, returning Guest.");
+                else console.log("[WebSim] getCurrentUser resolved:", u.username);
 
-                return _currentUser || {
+                return u || {
                     id: 'guest', username: 'Guest', avatar_url: 'https://www.redditstatic.com/avatars/avatar_default_02_FF4500.png'
                 };
             },

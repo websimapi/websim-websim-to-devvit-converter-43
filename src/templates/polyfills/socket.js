@@ -300,6 +300,11 @@ export const websimSocketPolyfill = `
                     window._genericDB = data.dbData;
                     window._currentUser = data.user;
                     
+                    // Notify all subscribers that data has arrived
+                    Object.keys(data.dbData).forEach(col => {
+                         DevvitBridge.notifySubscribers(col);
+                    });
+
                     if (window.WebsimSocket) {
                         window.WebsimSocket.updateIdentity(data.user);
                     }
