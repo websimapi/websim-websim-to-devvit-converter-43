@@ -31,6 +31,7 @@ const router = express.Router();
 const DB_REGISTRY_KEY = 'sys:registry';
 
 async function fetchAllData() {
+    console.log('[Server] fetchAllData: Starting hydration...');
     try {
         const collections = await redis.zRange(DB_REGISTRY_KEY, 0, -1);
         const dbData = {};
@@ -52,34 +53,36 @@ async function fetchAllData() {
         };
         
         try {
-            // Try to get current user from context or Reddit API
             if (context.userId) {
                 user = { 
                     id: context.userId, 
                     username: context.username || 'RedditUser',
-                    avatar_url: user.avatar_url // Default
+                    avatar_url: user.avatar_url 
                 };
             }
             
-            // Always try to fetch rich profile for snoovatar (Server Source of Truth)
             const currUser = await reddit.getCurrentUser();
             if (currUser) {
                 const snoovatarUrl = await currUser.getSnoovatarUrl();
                 user = {
                     id: currUser.id,
                     username: currUser.username,
-                    // Use Snoovatar if available, else fallback to standard Reddit static default
                     avatar_url: snoovatarUrl ?? 'https://www.redditstatic.com/avatars/avatar_default_02_FF4500.png'
                 };
             }
         } catch(e) { 
-            console.warn('User fetch failed', e); 
+            console.warn('[Server] User fetch warning:', e.message); 
         }
 
+        console.log('[Server] fetchAllData: Complete. User:', user.username);
         return { dbData, user };
     } catch(e) {
-        console.error('Hydration Error:', e);
-        return { dbData: {}, user: null };
+        console.error('[Server] Hydration Error:', e);
+        // Return safe defaults so client doesn't hang
+        return { 
+            dbData: {}, 
+            user: { id: 'error', username: 'Guest', avatar_url: '' } 
+        };
     }
 }
 

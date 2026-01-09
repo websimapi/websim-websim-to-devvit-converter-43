@@ -23,18 +23,35 @@ export const websimStubsJs = `
 
     if (!window.websim) {
         window.websim = {
-            getCurrentUser: async () => {
-                // Wait for handshake
-                let tries = 0;
-                while(!_currentUser && tries < 20) {
-                    await new Promise(r => setTimeout(r, 100));
-                    tries++;
-                }
-                return _currentUser || {
+            // Getter for synchronous access (if game checks websim.user)
+            get user() {
+                return window._currentUser || {
                     id: 'guest', username: 'Guest', avatar_url: 'https://www.redditstatic.com/avatars/avatar_default_02_FF4500.png'
                 };
             },
-            getProject: async () => ({ id: 'local', title: 'Reddit Game' }),
+            getCurrentUser: async () => {
+                // Check Global User (populated by socket.js/bridge)
+                let tries = 0;
+                if (!window._currentUser) console.log("[WebSim] getCurrentUser: Waiting for identity...");
+                
+                while(!window._currentUser && tries < 30) { // Wait up to 3s
+                    await new Promise(r => setTimeout(r, 100));
+                    tries++;
+                }
+                
+                if (!window._currentUser) console.warn("[WebSim] getCurrentUser: Timed out, returning Guest.");
+                
+                return window._currentUser || {
+                    id: 'guest', username: 'Guest', avatar_url: 'https://www.redditstatic.com/avatars/avatar_default_02_FF4500.png'
+                };
+            },
+            getProject: async () => {
+                console.log("[WebSim] getProject called");
+                return { id: 'local', title: 'Reddit Game' };
+            },
+            on: (event, cb) => {
+                console.log("[WebSim] Stubbed .on() listener for:", event);
+            },
             collection: (name) => {
                 // Return safe stubs to prevent crashes before hydration
                 return window.websimSocketInstance ? window.websimSocketInstance.collection(name) : {
