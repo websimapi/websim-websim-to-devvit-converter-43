@@ -31,7 +31,6 @@ const router = express.Router();
 const DB_REGISTRY_KEY = 'sys:registry';
 
 async function fetchAllData() {
-    console.log('[Server] fetchAllData called');
     try {
         const collections = await redis.zRange(DB_REGISTRY_KEY, 0, -1);
         const dbData = {};
@@ -63,21 +62,18 @@ async function fetchAllData() {
             }
             
             // Always try to fetch rich profile for snoovatar (Server Source of Truth)
-            try {
-                const currUser = await reddit.getCurrentUser();
-                if (currUser) {
-                    const snoovatarUrl = await currUser.getSnoovatarUrl();
-                    user = {
-                        id: currUser.id,
-                        username: currUser.username,
-                        avatar_url: snoovatarUrl ?? 'https://www.redditstatic.com/avatars/avatar_default_02_FF4500.png'
-                    };
-                }
-            } catch(innerE) {
-                console.warn('[Server] reddit.getCurrentUser failed (non-fatal):', innerE.message);
+            const currUser = await reddit.getCurrentUser();
+            if (currUser) {
+                const snoovatarUrl = await currUser.getSnoovatarUrl();
+                user = {
+                    id: currUser.id,
+                    username: currUser.username,
+                    // Use Snoovatar if available, else fallback to standard Reddit static default
+                    avatar_url: snoovatarUrl ?? 'https://www.redditstatic.com/avatars/avatar_default_02_FF4500.png'
+                };
             }
         } catch(e) { 
-            console.warn('[Server] User fetch logic error', e); 
+            console.warn('User fetch failed', e); 
         }
 
         return { dbData, user };

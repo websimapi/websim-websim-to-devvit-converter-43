@@ -1,9 +1,6 @@
 export const websimStubsJs = `
 // [WebSim] API Stubs - Global Script
 (function() {
-    // Use window._currentUser as source of truth to sync with socket.js
-    const getCurrentUserGlobal = () => window._currentUser;
-
     // Listen for identity update from Socket Handshake or direct message
     const updateIdentity = (user) => {
         window._currentUser = user;
@@ -26,18 +23,13 @@ export const websimStubsJs = `
         window.websim = {
             getCurrentUser: async () => {
                 // Wait for handshake
-                let u = getCurrentUserGlobal();
-                if (!u) console.log("[WebSim] getCurrentUser waiting for identity...");
                 let tries = 0;
-                while(!u && tries < 50) {
+                // Check window._currentUser which is populated by socket.js/DevvitBridge
+                while(!window._currentUser && tries < 20) {
                     await new Promise(r => setTimeout(r, 100));
-                    u = getCurrentUserGlobal();
                     tries++;
                 }
-                if (!u) console.warn("[WebSim] getCurrentUser timed out, returning Guest.");
-                else console.log("[WebSim] getCurrentUser resolved:", u.username);
-
-                return u || {
+                return window._currentUser || {
                     id: 'guest', username: 'Guest', avatar_url: 'https://www.redditstatic.com/avatars/avatar_default_02_FF4500.png'
                 };
             },

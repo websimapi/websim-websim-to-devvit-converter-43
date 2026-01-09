@@ -2,7 +2,7 @@ export const websimSocketPolyfill = `
 // [WebSim] Realtime & DB Polyfill for Devvit
 (function() {
     // Shared user state
-    window._currentUser = null;
+    if (typeof window._currentUser === 'undefined') window._currentUser = null;
 
     // ------------------------------------------------------------------------
     // 1. WebsimSocket (Realtime Multiplayer)
@@ -31,6 +31,9 @@ export const websimSocketPolyfill = `
         }
 
         async initialize() {
+            if (this.initializing || this.isConnected) return;
+            this.initializing = true;
+
             console.log("[WebSim] Initializing Realtime Socket...");
             try {
                 console.log("[WebSim] Connecting to realtime channel 'global_room'...");
@@ -285,42 +288,19 @@ export const websimSocketPolyfill = `
         init: async () => {
             console.log("[Bridge] Initializing DB...");
             try {
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 8000);
-
-                const res = await fetch('/api/init', { signal: controller.signal });
-                clearTimeout(timeoutId);
-
-                if (!res.ok) throw new Error("HTTP " + res.status);
-                
-                const data = await res.json();
-                console.log("[Bridge] DB Init Success. User:", data.user?.username);
-
+                const data = await fetch('/api/init').then(r => r.json());
                 if (data.dbData) {
                     window._genericDB = data.dbData;
                     window._currentUser = data.user;
                     
-                    // Notify all subscribers that data has arrived
-                    Object.keys(data.dbData).forEach(col => {
-                         DevvitBridge.notifySubscribers(col);
-                    });
-
                     if (window.WebsimSocket) {
                         window.WebsimSocket.updateIdentity(data.user);
                     }
                     
                     // Dispatch Ready
-                    console.log("[Bridge] Dispatching GAMEDATA_READY");
                     window.dispatchEvent(new CustomEvent('GAMEDATA_READY', { detail: data.dbData }));
                 }
-            } catch (e) { 
-                console.warn("[Bridge] Init failed/timed out:", e);
-                // Fallback to avoid hanging
-                window._currentUser = { username: 'Guest', avatar_url: '' };
-                window._genericDB = {};
-                console.log("[Bridge] Dispatching GAMEDATA_READY (Fallback)");
-                window.dispatchEvent(new CustomEvent('GAMEDATA_READY', { detail: {} }));
-            }
+            } catch (e) { console.warn("[Bridge] Init failed", e); }
         },
         notifySubscribers: (collection) => {
             delete window._listCache[collection];
