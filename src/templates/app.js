@@ -1,5 +1,8 @@
 export const getMainTs = (title) => {
-    const safeTitle = title.replace(/'/g, "\\'");
+    // Ensure title is safely escaped for the string template
+    const titleJson = JSON.stringify(title); // "Title"
+    const safeTitle = titleJson.slice(1, -1).replace(/'/g, "\\'");
+
     return `
 import express from 'express';
 import { Devvit } from '@devvit/public-api';
@@ -145,7 +148,6 @@ router.post('/api/realtime/message', async (req, res) => {
         console.log('[Server] Relaying Realtime Message:', JSON.stringify(msg).substring(0, 200));
         
         // Broadcast to 'global_room' which clients subscribe to via connectRealtime
-        // Broadcast to 'global_room' which clients subscribe to via connectRealtime
         await realtime.send('global_room', msg);
         res.json({ success: true });
     } catch(e) {
@@ -173,7 +175,8 @@ router.get('/api/lookup/avatar/:username', async (req, res) => {
 router.get('/api/v1/search/assets', async (req, res) => {
     try {
         const query = new URLSearchParams(req.query).toString();
-        const response = await fetch(\`https://websim.ai/api/v1/search/assets?\${query}\`);
+        // Use double quotes for URL to avoid backtick issues in generated code
+        const response = await fetch("https://websim.ai/api/v1/search/assets?" + query);
         if (!response.ok) return res.status(response.status).json({ error: 'Upstream Error' });
         const data = await response.json();
         res.json(data);
@@ -186,7 +189,7 @@ router.get('/api/v1/search/assets', async (req, res) => {
 router.get('/api/v1/search/assets/relevant', async (req, res) => {
     try {
         const query = new URLSearchParams(req.query).toString();
-        const response = await fetch(\`https://websim.ai/api/v1/search/assets/relevant?\${query}\`);
+        const response = await fetch("https://websim.ai/api/v1/search/assets/relevant?" + query);
         if (!response.ok) return res.status(response.status).json({ error: 'Upstream Error' });
         const data = await response.json();
         res.json(data);

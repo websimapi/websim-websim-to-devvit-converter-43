@@ -23,6 +23,6 @@ export async function makeRequest(endpoint, options = {}) {
 
 export async function fetchRaw(endpoint) {
     const response = await fetch(`${API_BASE}${endpoint}`);
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    if (!response.ok) throw new Error('HTTP Error ' + response.status);
     return response.arrayBuffer();
 }

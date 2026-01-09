@@ -87,7 +87,7 @@ files.forEach(fileObj => {
         // We look for 'from "http' or 'src="http' specifically.
         // We use a regex that avoids matching "http://www.w3.org..." or redditstatic
         // Updated to handle https and be robust against replacement strings
-        const remoteMatch = content.match(/src\\s*=\\s*['"](https?:\\/\\/(?!(www\\.w3\\.org|(\\w+\\.)?redditstatic\\.com|images\\.websim\\.ai|images\\.websim\\.com))[^'"]+)['"]/i);
+        const remoteMatch = content.match(/src\\s*=\\s*['"](https?:\\/\\/(?!(www\\.w3\\.org|(\\w+\\.)?redditstatic\\.com|images\\.websim\\.ai|images\\.websim\\.com|cdn\\.jsdelivr\\.net|esm\\.sh|unpkg\\.com))[^'"]+)['"]/i);
         const importMatch = content.match(/from\\s+['"](http[^'"]+)/i);
 
         if (importMatch || remoteMatch) {
