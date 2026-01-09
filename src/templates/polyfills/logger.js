@@ -35,5 +35,9 @@ export const simpleLoggerJs = `
   window.addEventListener('error', function(e) {
     post('error', ['[Uncaught]', e.message]);
   });
+
+  document.addEventListener('securitypolicyviolation', (e) => {
+    post('error', ['[CSP Violation]', 'BlockedURI:', e.blockedURI, 'Violated:', e.violatedDirective, 'Source:', e.sourceFile, 'Line:', e.lineNumber]);
+  });
 })();
 `;

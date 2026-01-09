@@ -74,7 +74,13 @@ export const generateDevvitJson = (slug, entrypoints) => JSON.stringify({
 
 export const generateClientViteConfig = ({ hasReact = false, hasRemotion = false, inputs = {} } = {}) => `
 import { defineConfig } from 'vite';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
 ${hasReact ? "import react from '@vitejs/plugin-react';" : ""}
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export default defineConfig({
   mode: 'production',
@@ -94,11 +100,11 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      'react/jsx-dev-runtime': '/jsx-dev-proxy.js',
+      'react/jsx-dev-runtime': path.resolve(__dirname, './jsx-dev-proxy.js'),
       'react/jsx-runtime': 'react/jsx-runtime',
       'remotion': 'remotion',
-      'websim': '/websim_package.js',
-      '@protobufjs/inquire': '/protobuf-inquire-stub.js'
+      'websim': path.resolve(__dirname, './websim_package.js'),
+      '@protobufjs/inquire': path.resolve(__dirname, './protobuf-inquire-stub.js')
     },
     extensions: ['.mjs', '.js', '.mts', '.ts', '.jsx', '.tsx', '.json'],
     mainFields: ['browser', 'module', 'main'],

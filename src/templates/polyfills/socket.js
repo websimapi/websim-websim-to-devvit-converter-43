@@ -34,7 +34,9 @@ export const websimSocketPolyfill = `
             console.log("[WebSim] Initializing Realtime Socket...");
             try {
                 // Dynamically import Devvit Web Client
+                console.log("[WebSim] Importing @devvit/web/client...");
                 const { connectRealtime } = await import('@devvit/web/client');
+                console.log("[WebSim] Import successful. Connecting to realtime channel...");
                 
                 // Devvit Web Client (WebView) connectRealtime only receives messages.
                 // It does NOT return a channel with .send().
