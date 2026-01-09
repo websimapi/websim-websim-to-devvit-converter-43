@@ -282,38 +282,39 @@ export const websimSocketPolyfill = `
     window._subscribers = {};
 
     const DevvitBridge = {
-        _initialized: false,
         init: async () => {
-            if (DevvitBridge._initialized) return;
-            DevvitBridge._initialized = true;
-
-            console.log("[Bridge] Initializing DB & User Context...");
+            console.log("[Bridge] Initializing DB...");
             try {
-                const res = await fetch('/api/init');
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+                const res = await fetch('/api/init', { signal: controller.signal });
+                clearTimeout(timeoutId);
+
+                if (!res.ok) throw new Error("HTTP " + res.status);
                 
                 const data = await res.json();
-                console.log("[Bridge] /api/init Success. User:", data.user ? data.user.username : 'Guest');
-                
+                console.log("[Bridge] DB Init Success. User:", data.user?.username);
+
                 if (data.dbData) {
                     window._genericDB = data.dbData;
+                    window._currentUser = data.user;
+                    
+                    if (window.WebsimSocket) {
+                        window.WebsimSocket.updateIdentity(data.user);
+                    }
+                    
+                    // Dispatch Ready
+                    console.log("[Bridge] Dispatching GAMEDATA_READY");
+                    window.dispatchEvent(new CustomEvent('GAMEDATA_READY', { detail: data.dbData }));
                 }
-                
-                // Set global user for Stubs and Socket
-                window._currentUser = data.user || { username: 'Guest', avatar_url: '' };
-                
-                if (window.WebsimSocket) {
-                    window.WebsimSocket.updateIdentity(window._currentUser);
-                }
-                
-                // Dispatch Ready
-                console.log("[Bridge] Dispatching GAMEDATA_READY...");
-                window.dispatchEvent(new CustomEvent('GAMEDATA_READY', { detail: data.dbData || {} }));
-                
             } catch (e) { 
-                console.error("[Bridge] Init failed:", e);
-                // Fallback to avoid infinite hangs in stubs
+                console.warn("[Bridge] Init failed/timed out:", e);
+                // Fallback to avoid hanging
                 window._currentUser = { username: 'Guest', avatar_url: '' };
+                window._genericDB = {};
+                console.log("[Bridge] Dispatching GAMEDATA_READY (Fallback)");
+                window.dispatchEvent(new CustomEvent('GAMEDATA_READY', { detail: {} }));
             }
         },
         notifySubscribers: (collection) => {
@@ -366,13 +367,8 @@ export const websimSocketPolyfill = `
         })
     };
 
-    // Attempt init as early as possible
-    if (document.readyState === 'complete' || document.readyState === 'interactive') {
-        setTimeout(DevvitBridge.init, 10);
-    } else {
-        window.addEventListener('DOMContentLoaded', () => setTimeout(DevvitBridge.init, 10));
-        window.addEventListener('load', () => setTimeout(DevvitBridge.init, 10));
-    }
+    if (document.readyState === 'complete') setTimeout(DevvitBridge.init, 100);
+    else window.addEventListener('load', () => setTimeout(DevvitBridge.init, 100));
 
 })();
 `;

@@ -23,35 +23,22 @@ export const websimStubsJs = `
 
     if (!window.websim) {
         window.websim = {
-            // Getter for synchronous access (if game checks websim.user)
-            get user() {
-                return window._currentUser || {
-                    id: 'guest', username: 'Guest', avatar_url: 'https://www.redditstatic.com/avatars/avatar_default_02_FF4500.png'
-                };
-            },
             getCurrentUser: async () => {
-                // Check Global User (populated by socket.js/bridge)
+                // Wait for handshake
+                if (!_currentUser) console.log("[WebSim] getCurrentUser waiting for identity...");
                 let tries = 0;
-                if (!window._currentUser) console.log("[WebSim] getCurrentUser: Waiting for identity...");
-                
-                while(!window._currentUser && tries < 30) { // Wait up to 3s
+                while(!_currentUser && tries < 50) {
                     await new Promise(r => setTimeout(r, 100));
                     tries++;
                 }
-                
-                if (!window._currentUser) console.warn("[WebSim] getCurrentUser: Timed out, returning Guest.");
-                
-                return window._currentUser || {
+                if (!_currentUser) console.warn("[WebSim] getCurrentUser timed out, returning Guest.");
+                else console.log("[WebSim] getCurrentUser resolved:", _currentUser.username);
+
+                return _currentUser || {
                     id: 'guest', username: 'Guest', avatar_url: 'https://www.redditstatic.com/avatars/avatar_default_02_FF4500.png'
                 };
             },
-            getProject: async () => {
-                console.log("[WebSim] getProject called");
-                return { id: 'local', title: 'Reddit Game' };
-            },
-            on: (event, cb) => {
-                console.log("[WebSim] Stubbed .on() listener for:", event);
-            },
+            getProject: async () => ({ id: 'local', title: 'Reddit Game' }),
             collection: (name) => {
                 // Return safe stubs to prevent crashes before hydration
                 return window.websimSocketInstance ? window.websimSocketInstance.collection(name) : {

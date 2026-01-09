@@ -42,6 +42,10 @@ export const simpleLoggerJs = `
     post('error', ['[Uncaught]', e.message, 'at', e.filename, ':', e.lineno]);
   });
 
+  window.addEventListener('unhandledrejection', function(e) {
+    post('error', ['[Unhandled Promise]', e.reason]);
+  });
+
   document.addEventListener('securitypolicyviolation', (e) => {
     post('error', ['[CSP Violation]', 'BlockedURI:', e.blockedURI, 'Violated:', e.violatedDirective, 'Source:', e.sourceFile, 'Line:', e.lineNumber]);
   });

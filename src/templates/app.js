@@ -1,8 +1,5 @@
 export const getMainTs = (title) => {
-    // Ensure title is safely escaped for the string template
-    const titleJson = JSON.stringify(title); // "Title"
-    const safeTitle = titleJson.slice(1, -1).replace(/'/g, "\\'");
-
+    const safeTitle = title.replace(/'/g, "\\'");
     return `
 import express from 'express';
 import { Devvit } from '@devvit/public-api';
@@ -34,7 +31,7 @@ const router = express.Router();
 const DB_REGISTRY_KEY = 'sys:registry';
 
 async function fetchAllData() {
-    console.log('[Server] fetchAllData: Starting hydration...');
+    console.log('[Server] fetchAllData called');
     try {
         const collections = await redis.zRange(DB_REGISTRY_KEY, 0, -1);
         const dbData = {};
@@ -56,36 +53,37 @@ async function fetchAllData() {
         };
         
         try {
+            // Try to get current user from context or Reddit API
             if (context.userId) {
                 user = { 
                     id: context.userId, 
                     username: context.username || 'RedditUser',
-                    avatar_url: user.avatar_url 
+                    avatar_url: user.avatar_url // Default
                 };
             }
             
-            const currUser = await reddit.getCurrentUser();
-            if (currUser) {
-                const snoovatarUrl = await currUser.getSnoovatarUrl();
-                user = {
-                    id: currUser.id,
-                    username: currUser.username,
-                    avatar_url: snoovatarUrl ?? 'https://www.redditstatic.com/avatars/avatar_default_02_FF4500.png'
-                };
+            // Always try to fetch rich profile for snoovatar (Server Source of Truth)
+            try {
+                const currUser = await reddit.getCurrentUser();
+                if (currUser) {
+                    const snoovatarUrl = await currUser.getSnoovatarUrl();
+                    user = {
+                        id: currUser.id,
+                        username: currUser.username,
+                        avatar_url: snoovatarUrl ?? 'https://www.redditstatic.com/avatars/avatar_default_02_FF4500.png'
+                    };
+                }
+            } catch(innerE) {
+                console.warn('[Server] reddit.getCurrentUser failed (non-fatal):', innerE.message);
             }
         } catch(e) { 
-            console.warn('[Server] User fetch warning:', e.message); 
+            console.warn('[Server] User fetch logic error', e); 
         }
 
-        console.log('[Server] fetchAllData: Complete. User:', user.username);
         return { dbData, user };
     } catch(e) {
-        console.error('[Server] Hydration Error:', e);
-        // Return safe defaults so client doesn't hang
-        return { 
-            dbData: {}, 
-            user: { id: 'error', username: 'Guest', avatar_url: '' } 
-        };
+        console.error('Hydration Error:', e);
+        return { dbData: {}, user: null };
     }
 }
 
@@ -148,6 +146,7 @@ router.post('/api/realtime/message', async (req, res) => {
         console.log('[Server] Relaying Realtime Message:', JSON.stringify(msg).substring(0, 200));
         
         // Broadcast to 'global_room' which clients subscribe to via connectRealtime
+        // Broadcast to 'global_room' which clients subscribe to via connectRealtime
         await realtime.send('global_room', msg);
         res.json({ success: true });
     } catch(e) {
@@ -175,8 +174,7 @@ router.get('/api/lookup/avatar/:username', async (req, res) => {
 router.get('/api/v1/search/assets', async (req, res) => {
     try {
         const query = new URLSearchParams(req.query).toString();
-        // Use double quotes for URL to avoid backtick issues in generated code
-        const response = await fetch("https://websim.ai/api/v1/search/assets?" + query);
+        const response = await fetch(\`https://websim.ai/api/v1/search/assets?\${query}\`);
         if (!response.ok) return res.status(response.status).json({ error: 'Upstream Error' });
         const data = await response.json();
         res.json(data);
@@ -189,7 +187,7 @@ router.get('/api/v1/search/assets', async (req, res) => {
 router.get('/api/v1/search/assets/relevant', async (req, res) => {
     try {
         const query = new URLSearchParams(req.query).toString();
-        const response = await fetch("https://websim.ai/api/v1/search/assets/relevant?" + query);
+        const response = await fetch(\`https://websim.ai/api/v1/search/assets/relevant?\${query}\`);
         if (!response.ok) return res.status(response.status).json({ error: 'Upstream Error' });
         const data = await response.json();
         res.json(data);
