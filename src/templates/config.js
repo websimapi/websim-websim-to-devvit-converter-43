@@ -114,14 +114,20 @@ export default defineConfig({
     emptyOutDir: true,
     target: 'es2020',
     minify: 'terser', // ← CHANGE FROM esbuild to terser for better CSP compliance
-    terserOptions: {  // ← ADD THIS BLOCK
+    terserOptions: {
       compress: {
         drop_console: false,
-        pure_funcs: [] // Don't remove any functions
+        pure_funcs: [],
+        ecma: 2020,
+        passes: 2
       },
       format: {
-        comments: false // Remove all comments
-      }
+        comments: false,
+        ecma: 2020
+      },
+      module: true,
+      toplevel: true,
+      safari10: true
     },
     sourcemap: false,
     chunkSizeWarningLimit: 1000,

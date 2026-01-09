@@ -36,7 +36,7 @@ export const websimSocketPolyfill = `
                 const { connectRealtime } = await import('@devvit/web/client');
                 
                 this.channel = await connectRealtime({
-                    channel: 'global-room',
+                    channel: 'global_room',
                     onMessage: (msg) => this._handleMessage(msg),
                     onConnect: () => {
                         console.log("[WebSim] Realtime Connected. ClientID:", this.clientId);
