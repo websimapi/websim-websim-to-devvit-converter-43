@@ -105,8 +105,7 @@ export default defineConfig({
       'remotion': 'remotion',
       'websim': path.resolve(__dirname, './websim_package.js'),
       '@protobufjs/inquire': path.resolve(__dirname, './protobuf-inquire-stub.js'),
-      'protobufjs/inquire': path.resolve(__dirname, './protobuf-inquire-stub.js'),
-      'protobufjs': 'protobufjs/minimal'
+      'protobufjs/inquire': path.resolve(__dirname, './protobuf-inquire-stub.js')
     },
     extensions: ['.mjs', '.js', '.mts', '.ts', '.jsx', '.tsx', '.json'],
     mainFields: ['browser', 'module', 'main'],
