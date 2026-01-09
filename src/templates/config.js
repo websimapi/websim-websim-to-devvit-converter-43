@@ -152,6 +152,8 @@ export default defineConfig({
     "process.env.NODE_ENV": JSON.stringify("production"),
     "process.platform": JSON.stringify("browser"),
     "process.env.REMOTION_ENV": JSON.stringify("production"),
+    "__REACT_DEVTOOLS_GLOBAL_HOOK__": "({ isDisabled: true })",
+    "process.env.REMOTION_DISABLE_STUDIO": JSON.stringify("true"),
   },
   optimizeDeps: {
     include: [${hasReact ? "'react', 'react-dom', 'react/jsx-runtime'" : ""}, ${hasRemotion ? "'remotion', '@remotion/player'" : ""}],
