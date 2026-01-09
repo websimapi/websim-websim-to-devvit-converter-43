@@ -140,6 +140,7 @@ router.post('/api/realtime/message', async (req, res) => {
     try {
         const msg = req.body;
         // Broadcast to 'global_room' which clients subscribe to via connectRealtime
+        // Note: We use the server-side realtime.send method
         await realtime.send('global_room', msg);
         res.json({ success: true });
     } catch(e) {
